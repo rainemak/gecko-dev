@@ -12,7 +12,8 @@
 
 #ifdef PR_LOGGING
 
-#ifdef EMBED_LITE_INTERNAL
+//#ifdef EMBED_LITE_INTERNAL
+#if 1
 
 #include "prlog.h"
 
