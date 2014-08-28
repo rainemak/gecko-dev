@@ -20,13 +20,13 @@
 
 extern PRLogModuleInfo* GetEmbedCommonLog(const char* aModule);
 
-#define LOGF(FMT, ...) printf("FUNC::%s:%d \n" FMT , __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOGT(FMT, ...) printf("TRACE::%s:%d \n" FMT , __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOGW(FMT, ...) printf("WARN: EmbedLite::%s:%d \n" FMT , __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOGE(FMT, ...) printf("ERROR: EmbedLite::%s:%d \n" FMT , __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOGNI(FMT, ...) printf("NON_IMPL: EmbedLite::%s:%d \n" FMT , __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGF(FMT, ...) fprintf(stderr,"FUNC::%s:%d " FMT "\n", __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGT(FMT, ...) fprintf(stderr,"TRACE::%s:%d " FMT "\n", __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGW(FMT, ...) fprintf(stderr,"WARN: EmbedLite::%s:%d " FMT "\n", __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGE(FMT, ...) fprintf(stderr,"ERROR: EmbedLite::%s:%d " FMT "\n", __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGNI(FMT, ...) fprintf(stderr,"NON_IMPL: EmbedLite::%s:%d " FMT "\n", __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 
-#define LOGC(CUSTOMNAME, FMT, ...) printf("::%s:%d \n" FMT , __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGC(CUSTOMNAME, FMT, ...) fprintf(stderr,"::%s:%d " FMT "\n", __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 #else // EMBED_LITE_INTERNAL
 
