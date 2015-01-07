@@ -1,0 +1,10 @@
+diff --git a/embedding/embedlite/config/mozconfig.merqtxulrunner b/embedding/embedlite/config/mozconfig.merqtxulrunner
+index a538699..7ae8a79 100644
+--- a/embedding/embedlite/config/mozconfig.merqtxulrunner
++++ b/embedding/embedlite/config/mozconfig.merqtxulrunner
+@@ -41,3 +41,5 @@ ac_add_options --disable-necko-wifi
+ 
+ ac_add_options --disable-accessibility
+ ac_add_options --without-x
++
++ac_add_options --enable-debug
