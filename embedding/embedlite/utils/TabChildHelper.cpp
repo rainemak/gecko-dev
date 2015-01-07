@@ -259,7 +259,9 @@ TabChildHelper::Observe(nsISupports* aSubject,
         do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
       utils->SetIsFirstPaint(true);
       if (observerService) {
-        observerService->NotifyObservers(aSubject, "embedlite-before-first-paint", nullptr);
+        nsString data;
+        data.AppendPrintf("{ \"viewId\" : \"%u\" }", mView->GetID());
+        observerService->NotifyObservers(aSubject, "embedlite-before-first-paint", data);
       }
     }
   }
