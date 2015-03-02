@@ -677,7 +677,8 @@ public:
     }
   }
   bool NeedToForceTransparentSurfaceForItem(nsDisplayItem* aItem) {
-    return aItem == mGlassDisplayItem;
+    return false;
+    //return aItem == mGlassDisplayItem;
   }
 
   void SetContainsPluginItem() { mContainsPluginItem = true; }
