@@ -604,7 +604,12 @@ nsRefreshDriver::Shutdown()
 /* static */ int32_t
 nsRefreshDriver::DefaultInterval()
 {
-  return NSToIntRound(1000.0 / DEFAULT_FRAME_RATE);
+  int32_t rate = Preferences::GetInt("layout.frame_rate", -1);
+  if (rate < 0) {
+    rate = DEFAULT_FRAME_RATE;
+  }
+
+  return NSToIntRound(1000.0 / rate);
 }
 
 // Compute the interval to use for the refresh driver timer, in milliseconds.
