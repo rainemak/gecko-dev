@@ -182,7 +182,14 @@ CompositorOGL::CreateContext()
   if (!context && PR_GetEnv("MOZ_LAYERS_PREFER_OFFSCREEN")) {
     SurfaceCaps caps = SurfaceCaps::ForRGB();
     caps.preserve = false;
+    if (PR_GetEnv("MOZ_GL_CONTEXT_PROVIDER_PRESERVE")) {
+        caps.preserve = true;
+    }
+
     caps.alpha = true;
+    if (PR_GetEnv("MOZ_GL_CONTEXT_PROVIDER_NO_ALPHA")) {
+        caps.alpha = false;
+    }
     caps.bpp16 = gfxPlatform::GetPlatform()->GetOffscreenFormat() == gfxImageFormat::RGB16_565;
     context = GLContextProvider::CreateOffscreen(gfxIntSize(mSurfaceSize.width,
                                                             mSurfaceSize.height), caps);
