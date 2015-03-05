@@ -47,6 +47,8 @@
 #include "prlog.h"                      // for PRLogModuleInfo
 #include "gfx2DGlue.h"
 
+#include "prenv.h"
+
 class gfxContext;
 
 extern uint8_t gLayerManagerLayerBuilder;
@@ -731,6 +733,12 @@ public:
     NS_ASSERTION((aFlags & (CONTENT_OPAQUE | CONTENT_COMPONENT_ALPHA)) !=
                  (CONTENT_OPAQUE | CONTENT_COMPONENT_ALPHA),
                  "Can't be opaque and require component alpha");
+
+    if (PR_GetEnv("MOZ_LAYERS_DISABLE_ALPHA")) {
+      aFlags = aFlags & ~CONTENT_COMPONENT_ALPHA;
+      aFlags = aFlags | CONTENT_OPAQUE;
+    }
+
     if (mContentFlags != aFlags) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ContentFlags %u", this, aFlags));
       mContentFlags = aFlags;
