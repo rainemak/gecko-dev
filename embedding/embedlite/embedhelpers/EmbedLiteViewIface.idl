@@ -27,6 +27,7 @@ class nsString;
 [scriptable, uuid(6d7750f8-e028-4445-a0cb-d9ce28fb03dd)]
 interface EmbedLiteViewIface
 {
+    void RenderGL();
     void RenderToImage(in buffer aData, in int32_t aWidth, in int32_t aHeigth, in int32_t aStride, in int32_t aDepth);
     void SetViewSize(in int32_t aWidth, in int32_t aHeight);
     void SetGLViewPortSize(in int32_t aWidth, in int32_t aHeight);

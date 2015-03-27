@@ -119,6 +119,8 @@ public:
   // Render content into custom rgb image (SW Rendering)
   virtual bool RenderToImage(unsigned char* aData, int imgW, int imgH, int stride, int depth);
 
+  virtual bool RenderGL();
+
   //   Setup renderable GL/EGL window surface size
   virtual void SetGLViewPortSize(int width, int height);
 

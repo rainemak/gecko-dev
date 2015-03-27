@@ -371,6 +371,15 @@ EmbedLiteViewThreadParent::RenderToImage(unsigned char* aData, int imgW, int img
 }
 
 NS_IMETHODIMP
+EmbedLiteViewThreadParent::RenderGL()
+{
+  if (mCompositor) {
+    return mCompositor->RenderGL() ? NS_OK : NS_ERROR_FAILURE;
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 EmbedLiteViewThreadParent::SetViewSize(int width, int height)
 {
   LOGT("sz[%i,%i]", width, height);
