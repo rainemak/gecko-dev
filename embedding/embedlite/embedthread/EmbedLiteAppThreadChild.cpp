@@ -75,7 +75,7 @@ EmbedLiteAppThreadChild::Init(MessageChannel* aParentChannel)
   LOGT();
   InitWindowWatcher();
   Open(aParentChannel, mParentLoop, ipc::ChildSide);
-  RecvSetBoolPref(nsDependentCString("layers.offmainthreadcomposition.enabled"), true);
+//  RecvSetBoolPref(nsDependentCString("layers.offmainthreadcomposition.enabled"), true);
 
   mozilla::DebugOnly<nsresult> rv = InitAppService();
   MOZ_ASSERT(NS_SUCCEEDED(rv));
