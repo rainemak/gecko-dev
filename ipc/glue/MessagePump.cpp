@@ -226,6 +226,9 @@ DoWorkRunnable::Run()
 {
   MessageLoop* loop = MessageLoop::current();
   MOZ_ASSERT(loop);
+  if (!loop) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   bool nestableTasksAllowed = loop->NestableTasksAllowed();
 
