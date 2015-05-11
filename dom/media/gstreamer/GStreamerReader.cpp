@@ -135,6 +135,11 @@ GStreamerReader::GStreamerReader(AbstractMediaDecoder* aDecoder)
 
   gst_segment_init(&mVideoSegment, GST_FORMAT_UNDEFINED);
   gst_segment_init(&mAudioSegment, GST_FORMAT_UNDEFINED);
+
+  nsIURI *uri = aDecoder->GetResource()->URI();
+  if (uri) {
+    uri->GetAsciiSpec(mUri);
+  }
 }
 
 GStreamerReader::~GStreamerReader()
@@ -308,6 +313,51 @@ void GStreamerReader::PlayBinSourceSetupCb(GstElement* aPlayBin,
   g_object_get(aPlayBin, "source", &source, nullptr);
   reader->PlayBinSourceSetup(GST_APP_SRC(source));
 }
+#if GST_VERSION_MAJOR == 1
+gboolean GStreamerReader::AppSrcQueryCB(GstPad *pad, GstObject *parent, GstQuery *query)
+{
+  GstBaseSrc *src = GST_BASE_SRC(parent);
+#else
+gboolean GStreamerReader::AppSrcQueryCB(GstPad *pad, GstQuery *query)
+{
+  GstBaseSrc *src = GST_BASE_SRC(gst_pad_get_parent(pad));
+#endif
+  gboolean result;
+
+  if (!src)
+    return FALSE;
+
+  switch (GST_QUERY_TYPE (query)) {
+    case GST_QUERY_URI: {
+        GStreamerReader *reader = static_cast<GStreamerReader *>(gst_pad_get_element_private(pad));
+
+        const char *uri;
+        if (NS_CStringGetData(reader->mUri, &uri) > 0) {
+          gst_query_set_uri(query, uri);
+          result = TRUE;
+        } else {
+          result = FALSE;
+        }
+        break;
+    }
+    default: {
+      GstBaseSrcClass *bclass = GST_BASE_SRC_GET_CLASS(src);
+      if (bclass->query)
+        result = bclass->query(src, query);
+      else
+#if GST_VERSION_MAJOR == 1
+        result = gst_pad_query_default(pad, parent, query);
+#else
+        result = gst_pad_query_default(pad, query);
+#endif
+    }
+  }
+
+#if GST_VERSION_MAJOR == 0
+  gst_object_unref(src);
+#endif
+  return result;
+}
 
 void GStreamerReader::PlayBinSourceSetup(GstAppSrc* aSource)
 {
@@ -338,6 +388,13 @@ void GStreamerReader::PlayBinSourceSetup(GstAppSrc* aSource)
      */
     LOG(PR_LOG_DEBUG, "configuring push mode, len %lld", resourceLength);
     gst_app_src_set_stream_type(mSource, GST_APP_STREAM_TYPE_SEEKABLE);
+  }
+
+  GstPad *srcPad = gst_element_get_static_pad(GST_ELEMENT(mSource), "src");
+  if (srcPad) {
+    gst_pad_set_element_private(srcPad, this);
+    gst_pad_set_query_function(srcPad, AppSrcQueryCB);
+    gst_object_unref (srcPad);
   }
 
   // Set the source MIME type to stop typefind trying every. single. format.

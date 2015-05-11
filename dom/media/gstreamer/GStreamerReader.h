@@ -118,6 +118,15 @@ private:
                              GstCaps *aCaps,
                              GValueArray *aFactories);
 
+  /* Called to query information about source. Used to provide URI to
+   * upstream elements.
+   */
+#if GST_VERSION_MAJOR == 1
+  static gboolean AppSrcQueryCB(GstPad *pad, GstObject *parent, GstQuery *query);
+#else
+  static gboolean AppSrcQueryCB(GstPad *pad, GstQuery *query);
+#endif
+
   /* Called on the source-setup signal emitted by playbin. Used to
    * configure appsrc .
    */
@@ -266,6 +275,8 @@ private:
 #endif
   int fpsNum;
   int fpsDen;
+
+  nsAutoCString mUri;
 };
 
 } // namespace mozilla

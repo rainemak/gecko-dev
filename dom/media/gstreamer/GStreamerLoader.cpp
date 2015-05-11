@@ -13,6 +13,7 @@
 #define LIBGSTREAMER 0
 #define LIBGSTAPP 1
 #define LIBGSTVIDEO 2
+#define LIBGSTBASE 3
 
 #ifdef __OpenBSD__
 #define LIB_GST_SUFFIX ".so"
@@ -73,10 +74,11 @@ load_gstreamer()
     gstreamerLib = dlopen("libgstreamer-" GST_API_VERSION LIB_GST_SUFFIX, RTLD_NOW | RTLD_LOCAL);
   }
 
-  void *handles[3] = {
+  void *handles[4] = {
     gstreamerLib,
     dlopen("libgstapp-" GST_API_VERSION LIB_GST_SUFFIX, RTLD_NOW | RTLD_LOCAL),
-    dlopen("libgstvideo-" GST_API_VERSION LIB_GST_SUFFIX, RTLD_NOW | RTLD_LOCAL)
+    dlopen("libgstvideo-" GST_API_VERSION LIB_GST_SUFFIX, RTLD_NOW | RTLD_LOCAL),
+    dlopen("libgstbase-" GST_API_VERSION LIB_GST_SUFFIX, RTLD_NOW | RTLD_LOCAL)
   };
 
   for (size_t i = 0; i < sizeof(handles) / sizeof(handles[0]); i++) {

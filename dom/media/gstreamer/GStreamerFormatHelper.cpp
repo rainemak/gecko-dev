@@ -35,13 +35,17 @@ void GStreamerFormatHelper::Shutdown() {
   gInstance = nullptr;
 }
 
-static char const *const sContainers[6][2] = {
+static char const *const sContainers[10][2] = {
   {"video/mp4", "video/quicktime"},
   {"video/quicktime", "video/quicktime"},
   {"audio/mp4", "audio/x-m4a"},
   {"audio/x-m4a", "audio/x-m4a"},
   {"audio/mpeg", "audio/mpeg, mpegversion=(int)1"},
   {"audio/mp3", "audio/mpeg, mpegversion=(int)1"},
+  {"audio/x-mpegurl", "application/x-hls"},
+  {"application/x-mpegurl", "application/x-hls"},
+  {"application/vnd.apple.mpegurl", "application/x-hls"},
+  {"video/mpegts", "video/mpegts"}
 };
 
 static char const *const sCodecs[9][2] = {
@@ -62,7 +66,10 @@ static char const * const sDefaultCodecCaps[][2] = {
   {"audio/mp4", "audio/mpeg, mpegversion=(int)4"},
   {"audio/x-m4a", "audio/mpeg, mpegversion=(int)4"},
   {"audio/mp3", "audio/mpeg, layer=(int)3"},
-  {"audio/mpeg", "audio/mpeg, layer=(int)3"}
+  {"audio/mpeg", "audio/mpeg, layer=(int)3"},
+  {"audio/x-mpegurl", "video/x-h264"},
+  {"application/x-mpegurl", "video/x-h264"},
+  {"application/vnd.apple.mpegurl", "video/x-h264"},
 };
 
 static char const * const sPluginBlacklist[] = {
