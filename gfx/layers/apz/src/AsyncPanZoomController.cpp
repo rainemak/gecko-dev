@@ -2691,6 +2691,9 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
         mFrameMetrics.GetViewport().height != aLayerMetrics.GetViewport().height) {
       needContentRepaint = true;
       viewportUpdated = true;
+      if (mFrameMetrics.GetViewport().width != aLayerMetrics.GetViewport().width) {
+        mFrameMetrics.SetZoom(aLayerMetrics.GetZoom());
+      }
     }
     mFrameMetrics.SetViewport(aLayerMetrics.GetViewport());
   }
