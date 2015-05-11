@@ -1096,8 +1096,8 @@ ScrollFrameHelper::WantAsyncScroll() const
   // The check for scroll bars was added in bug 825692 to prevent layerization
   // of text inputs for performance reasons. However, if a text input is
   // focused we want to layerize it so we can async scroll it (bug 946408).
-  bool isVAsyncScrollable = isVScrollable && (mVScrollbarBox || isFocused);
-  bool isHAsyncScrollable = isHScrollable && (mHScrollbarBox || isFocused);
+  bool isVAsyncScrollable = isVScrollable;
+  bool isHAsyncScrollable = isHScrollable;
   return isVAsyncScrollable || isHAsyncScrollable;
 }
 
