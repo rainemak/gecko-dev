@@ -10580,7 +10580,9 @@ PLDHashOperator LockEnumerator(imgIRequest* aKey,
                                void*    userArg)
 {
   aKey->LockImage();
-  aKey->RequestDecode();
+  if (!Preferences::GetBool("image.mem.decodeondraw", false)) {
+    aKey->RequestDecode();
+  }
   return PL_DHASH_NEXT;
 }
 
