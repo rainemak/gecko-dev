@@ -63,7 +63,7 @@ public:
 protected:
     typedef gfxImageFormat ImageFormat;
 
-    GLContext* mGLContext;
+    RefPtr<GLContext> mGLContext;
 
     gfx::IntRect mUpdateRect;
     gfx::SurfaceFormat mUpdateFormat;
