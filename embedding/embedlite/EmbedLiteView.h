@@ -79,6 +79,11 @@ public:
 
   // Will be always called from the compositor thread.
   virtual void DrawOverlay(const nsIntRect& aRect) {}
+
+  // Invoked when expensive content rotation operation starts/ends. Not triggered
+  // for cheap and fast content rotation changes (ex, landscape->inverted landscape).
+  virtual void ContentRotationStarted() {}
+  virtual void ContentRotationFinished() {}
 };
 
 class EmbedLiteApp;
@@ -119,7 +124,7 @@ public:
   virtual void PinchEnd(int x, int y, float scale);
 
   // Setup renderable view size
-  virtual void SetViewSize(int width, int height);
+  virtual void SetViewSize(int width, int height, mozilla::ScreenRotation rotation);
 
   // Compositor Interface
   //   PNG Decoded data
@@ -130,9 +135,6 @@ public:
 
   //   Setup renderable GL/EGL window surface size
   virtual void SetGLViewPortSize(int width, int height);
-
-  // Set screen rotation (orientation change).
-  virtual void SetScreenRotation(mozilla::ScreenRotation rotation);
 
   virtual void ScheduleUpdate();
   // Clear the content of the view compositing surface with a given color.

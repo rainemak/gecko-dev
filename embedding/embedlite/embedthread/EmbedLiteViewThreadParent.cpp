@@ -29,7 +29,7 @@ EmbedLiteViewThreadParent::EmbedLiteViewThreadParent(const uint32_t& id, const u
   , mViewAPIDestroyed(false)
   , mCompositor(nullptr)
   , mRotation(ROTATION_0)
-  , mPendingRotation(false)
+  , mViewSizeChangeScheduled(false)
   , mUILoop(MessageLoop::current())
   , mLastIMEState(0)
   , mUploadTexture(0)
@@ -65,12 +65,6 @@ EmbedLiteViewThreadParent::SetCompositor(EmbedLiteCompositorParent* aCompositor)
   LOGT();
   mCompositor = aCompositor;
   UpdateScrollController();
-  if (mCompositor)
-    if (mPendingRotation) {
-      mCompositor->SetScreenRotation(mRotation);
-      mPendingRotation = false;
-    }
-    mCompositor->SetSurfaceSize(mGLViewPortSize.width, mGLViewPortSize.height);
 }
 
 NS_IMETHODIMP
@@ -376,13 +370,64 @@ EmbedLiteViewThreadParent::RenderToImage(unsigned char* aData, int imgW, int img
 }
 
 NS_IMETHODIMP
-EmbedLiteViewThreadParent::SetViewSize(int width, int height)
+EmbedLiteViewThreadParent::SetViewSize(int width, int height, mozilla::ScreenRotation& aRotation)
 {
-  LOGT("sz[%i,%i]", width, height);
-  mViewSize = ScreenIntSize(width, height);
-  unused << SendSetViewSize(gfxSize(width, height));
+  LOGT("sz[%i,%i,%i]", width, height, aRotation);
+
+  if (mViewSize.width == width && mViewSize.height == height && mRotation == aRotation) {
+    return NS_OK;
+  }
+
+  mViewSize = gfxSize(width, height);
+  mRotationChangedRecently = (aRotation != mRotation);
+  mRotation = aRotation;
+
+  if (!mViewSizeChangeScheduled) {
+    unused << SendSetViewSize(mViewSize, mRotation);
+    mViewSizeChangeScheduled = true;
+  }
 
   return NS_OK;
+}
+
+bool
+EmbedLiteViewThreadParent::RecvAckSetViewSize(const gfxSize& aSize, const mozilla::ScreenRotation& aRotation) 
+{
+  LOGT("Ack size change: (%g, %g), rot: %d", aSize.width, aSize.height, aRotation);
+
+  MOZ_ASSERT(mViewSizeChangeScheduled);
+
+  if (aSize != mViewSize || aRotation != mRotation) {
+    mRotationChangedRecently = (aRotation != mRotation);
+    unused << SendSetViewSize(mViewSize, mRotation);
+    return true;
+  }
+
+  mViewSizeChangeScheduled = false;
+
+  return true;
+}
+
+bool
+EmbedLiteViewThreadParent::RecvSizeChangeReflowStarted()
+{
+  if (mRotationChangedRecently) {
+    LOGT("Expensive content rotation started");
+    mView->GetListener()->ContentRotationStarted();
+    mRotationStartedEventSent = true;
+  }
+  return true;
+}
+
+bool
+EmbedLiteViewThreadParent::RecvSizeChangeReflowFinished()
+{
+  if (mRotationStartedEventSent) {
+    LOGT("Expensive content rotation finished");
+    mView->GetListener()->ContentRotationFinished();
+    mRotationStartedEventSent = false;
+  }
+  return true;
 }
 
 bool
@@ -392,28 +437,13 @@ EmbedLiteViewThreadParent::RecvGetGLViewSize(gfxSize* aSize)
   return true;
 }
 
+
 NS_IMETHODIMP
 EmbedLiteViewThreadParent::SetGLViewPortSize(int width, int height)
 {
   mGLViewPortSize = gfxSize(width, height);
-  if (mCompositor) {
-    mCompositor->SetSurfaceSize(width, height);
-  }
   unused << SendSetGLViewSize(mGLViewPortSize);
 
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-EmbedLiteViewThreadParent::SetScreenRotation(const mozilla::ScreenRotation& rotation)
-{
-  mRotation = rotation;
-
-  if (mCompositor) {
-    mCompositor->SetScreenRotation(rotation);
-  } else {
-    mPendingRotation = true;
-  }
   return NS_OK;
 }
 

@@ -104,10 +104,7 @@ public:
     LOGNI();
     return NS_OK;
   }
-  NS_IMETHOD Invalidate(const nsIntRect& aRect) {
-    return NS_OK;
-  }
-  // PuppetWidgets don't have native data, as they're purely nonnative.
+  NS_IMETHOD Invalidate(const nsIntRect& aRect) override;
   virtual void* GetNativeData(uint32_t aDataType);
   // PuppetWidgets don't have any concept of titles..
   NS_IMETHOD SetTitle(const nsAString& aTitle) {
@@ -152,7 +149,7 @@ public:
   virtual mozilla::layers::CompositorParent* NewCompositorParent(int aSurfaceWidth, int aSurfaceHeight) MOZ_OVERRIDE;
   virtual void CreateCompositor(int aWidth, int aHeight);
   virtual void CreateCompositor();
-  virtual nsIntRect GetNaturalBounds();
+  virtual nsIntRect GetNaturalBounds() MOZ_OVERRIDE;
 
   /**
    * Called before the LayerManager draws the layer tree.
@@ -160,7 +157,7 @@ public:
    * Always called from the compositing thread. Puppet Widget passes the call
    * forward to the EmbedLiteCompositorParent.
    */
-  virtual void DrawWindowUnderlay(LayerManagerComposite* aManager, nsIntRect aRect);
+  virtual void DrawWindowUnderlay(LayerManagerComposite* aManager, nsIntRect aRect) MOZ_OVERRIDE;
 
 
   /**
@@ -169,17 +166,25 @@ public:
    * Always called from the compositing thread. Puppet Widget passes the call
    * forward to the EmbedLiteCompositorParent.
    */
-  virtual void DrawWindowOverlay(LayerManagerComposite* aManager, nsIntRect aRect);
+  virtual void DrawWindowOverlay(LayerManagerComposite* aManager, nsIntRect aRect) MOZ_OVERRIDE;
 
-  virtual bool PreRender(LayerManagerComposite* aManager) override;
+  virtual bool PreRender(LayerManagerComposite* aManager) MOZ_OVERRIDE;
+  virtual void PostRender(LayerManagerComposite *aManager) MOZ_OVERRIDE;
 
   NS_IMETHOD         SetParent(nsIWidget* aNewParent);
   virtual nsIWidget *GetParent(void);
+
+  void SetRotation(mozilla::ScreenRotation);
+  void SetNaturalBounds(const nsIntRect&);
+  void UpdateCompositorSurfaceSize();
+  void SetReflowInProgress(bool reflow) { mReflowInProgress = reflow; }
 
 protected:
   virtual ~EmbedLitePuppetWidget();
 
 private:
+  typedef nsTArray<EmbedLitePuppetWidget*> ChildrenArray;
+
   nsresult Paint();
   bool ViewIsValid();
   mozilla::gl::GLContext* GetGLContext() const;
@@ -196,8 +201,11 @@ private:
   InputContext mInputContext;
   bool mIMEComposing;
   nsString mIMEComposingText;
-  nsRefPtr<EmbedLitePuppetWidget> mChild;
-  nsCOMPtr<nsIWidget> mParent;
+  ChildrenArray mChildren;
+  EmbedLitePuppetWidget* mParent;
+  mozilla::ScreenRotation mRotation;
+  nsIntRect mNaturalBounds;
+  bool mReflowInProgress;
 
   uint32_t mId;
 };
