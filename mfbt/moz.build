@@ -47,6 +47,7 @@ EXPORTS.mozilla = [
     'MSIntTypes.h',
     'NullPtr.h',
     'NumericLimits.h',
+    'Pair.h',
     'PodOperations.h',
     'Poison.h',
     'Range.h',
@@ -65,6 +66,7 @@ EXPORTS.mozilla = [
     'TypedEnumInternal.h',
     'Types.h',
     'TypeTraits.h',
+    'UniquePtr.h',
     'Vector.h',
     'WeakPtr.h',
 ]

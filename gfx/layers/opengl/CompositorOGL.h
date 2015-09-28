@@ -176,11 +176,15 @@ public:
 
   virtual TextureFactoryIdentifier GetTextureFactoryIdentifier() MOZ_OVERRIDE
   {
-    return TextureFactoryIdentifier(LayersBackend::LAYERS_OPENGL,
-                                    XRE_GetProcessType(),
-                                    GetMaxTextureSize(),
-                                    mFBOTextureTarget == LOCAL_GL_TEXTURE_2D,
-                                    SupportsPartialTextureUpdate());
+    TextureFactoryIdentifier result =
+      TextureFactoryIdentifier(LayersBackend::LAYERS_OPENGL,
+                               XRE_GetProcessType(),
+                               GetMaxTextureSize(),
+                               mFBOTextureTarget == LOCAL_GL_TEXTURE_2D,
+                               SupportsPartialTextureUpdate());
+    result.mSupportedBlendModes += gfx::CompositionOp::OP_SCREEN;
+    result.mSupportedBlendModes += gfx::CompositionOp::OP_MULTIPLY;
+    return result;
   }
 
   virtual TemporaryRef<CompositingRenderTarget>
@@ -240,11 +244,6 @@ public:
 
   virtual void MakeCurrent(MakeCurrentFlags aFlags = 0) MOZ_OVERRIDE;
 
-  virtual void SetTargetContext(gfx::DrawTarget* aTarget) MOZ_OVERRIDE
-  {
-    mTarget = aTarget;
-  }
-
   virtual void PrepareViewport(const gfx::IntSize& aSize,
                                const gfx::Matrix& aWorldTransform) MOZ_OVERRIDE;
 
@@ -290,11 +289,6 @@ private:
   {
     return gfx::ToIntSize(mWidgetSize);
   }
-
-  /**
-   * Context target, nullptr when drawing directly to our swap chain.
-   */
-  RefPtr<gfx::DrawTarget> mTarget;
 
   /** Widget associated with this compositor */
   nsIWidget *mWidget;
@@ -358,7 +352,9 @@ private:
                           gfx::Rect *aClipRectOut = nullptr,
                           gfx::Rect *aRenderBoundsOut = nullptr) MOZ_OVERRIDE;
 
-  ShaderConfigOGL GetShaderConfigFor(Effect *aEffect, MaskType aMask = MaskNone) const;
+  ShaderConfigOGL GetShaderConfigFor(Effect *aEffect,
+                                     MaskType aMask = MaskType::MaskNone,
+                                     gfx::CompositionOp aOp = gfx::CompositionOp::OP_OVER) const;
   ShaderProgramOGL* GetShaderProgramFor(const ShaderConfigOGL &aConfig);
 
   /**
@@ -394,7 +390,7 @@ private:
    * Copies the content of our backbuffer to the set transaction target.
    * Does not restore the target FBO, so only call from EndFrame.
    */
-  void CopyToTarget(gfx::DrawTarget* aTarget, const gfx::Matrix& aWorldMatrix);
+  void CopyToTarget(gfx::DrawTarget* aTarget, const nsIntPoint& aTopLeft, const gfx::Matrix& aWorldMatrix);
 
   /**
    * Implements the flipping of the y-axis to convert from layers/compositor

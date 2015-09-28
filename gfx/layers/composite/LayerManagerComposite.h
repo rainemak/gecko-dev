@@ -111,7 +111,7 @@ public:
   {
     MOZ_CRASH("Use BeginTransactionWithDrawTarget");
   }
-  void BeginTransactionWithDrawTarget(gfx::DrawTarget* aTarget);
+  void BeginTransactionWithDrawTarget(gfx::DrawTarget* aTarget, const nsIntRect& aRect);
 
   virtual bool EndEmptyTransaction(EndTransactionFlags aFlags = END_DEFAULT) MOZ_OVERRIDE;
   virtual void EndTransaction(DrawThebesLayerCallback aCallback,
@@ -271,6 +271,7 @@ private:
    * Context target, nullptr when drawing directly to our swap chain.
    */
   RefPtr<gfx::DrawTarget> mTarget;
+  nsIntRect mTargetBounds;
 
   gfx::Matrix mWorldMatrix;
   nsIntRegion mInvalidRegion;
@@ -321,6 +322,13 @@ public:
 
   virtual Layer* GetLayer() = 0;
 
+  /**
+   * Perform a first pass over the layer tree to prepare intermediate surfaces.
+   * This allows us on to avoid framebuffer switches in the middle of our render
+   * which is inefficient. This must be called before RenderLayer.
+   */
+  virtual void Prepare(const nsIntRect& aClipRect) {}
+
   virtual void RenderLayer(const nsIntRect& aClipRect) = 0;
 
   virtual bool SetCompositableHost(CompositableHost*)
@@ -337,6 +345,8 @@ public:
 
 
   virtual void DestroyFrontBuffer() { }
+
+  void AddBlendModeEffect(EffectChain& aEffectChain);
 
   /**
    * The following methods are

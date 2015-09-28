@@ -10,6 +10,8 @@
 #include <sys/types.h>                  // for int32_t
 #include "LayersTypes.h"                // for LayersBackend, etc
 #include "nsXULAppAPI.h"                // for GeckoProcessType, etc
+#include "mozilla/gfx/Types.h"
+#include "mozilla/EnumSet.h"
 
 namespace mozilla {
 namespace layers {
@@ -128,6 +130,7 @@ const DiagnosticFlags DIAGNOSTIC_REGION_RECT = 1 << 8;
 enum EffectTypes
 {
   EFFECT_MASK,
+  EFFECT_BLEND_MODE,
   EFFECT_MAX_SECONDARY, // sentinel for the count of secondary effect types
   EFFECT_RGB,
   EFFECT_YCBCR,
@@ -180,6 +183,7 @@ struct TextureFactoryIdentifier
 {
   LayersBackend mParentBackend;
   GeckoProcessType mParentProcessId;
+  EnumSet<gfx::CompositionOp> mSupportedBlendModes;
   int32_t mMaxTextureSize;
   bool mSupportsTextureBlitting;
   bool mSupportsPartialUploads;
@@ -191,6 +195,7 @@ struct TextureFactoryIdentifier
                            bool aSupportsPartialUploads = false)
     : mParentBackend(aLayersBackend)
     , mParentProcessId(aParentProcessId)
+    , mSupportedBlendModes(gfx::CompositionOp::OP_OVER)
     , mMaxTextureSize(aMaxTextureSize)
     , mSupportsTextureBlitting(aSupportsTextureBlitting)
     , mSupportsPartialUploads(aSupportsPartialUploads)
