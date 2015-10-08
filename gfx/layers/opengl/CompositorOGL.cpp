@@ -583,7 +583,6 @@ CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
 
   MOZ_ASSERT(!mFrameInProgress, "frame still in progress (should have called EndFrame");
 
-  mFrameInProgress = true;
   gfx::Rect rect;
   if (mUseExternalSurfaceSize) {
     rect = gfx::Rect(0, 0, mSurfaceSize.width, mSurfaceSize.height);
@@ -601,9 +600,9 @@ CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
   // We can't draw anything to something with no area
   // so just return
   if (width == 0 || height == 0) {
-    mFrameInProgress = false;
     return;
   }
+  mFrameInProgress = true;
 
   // If the widget size changed, we have to force a MakeCurrent
   // to make sure that GL sees the updated widget size.
