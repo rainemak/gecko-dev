@@ -648,8 +648,8 @@ float
 EmbedLitePuppetWidget::GetDPI()
 {
   if (mDPI < 0) {
-    if (mEmbed) {
-      mEmbed->GetDPI(&mDPI);
+    if (mView) {
+      mView->GetDPI(&mDPI);
     } else {
       mDPI = nsBaseWidget::GetDPI();
     }
