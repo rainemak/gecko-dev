@@ -364,7 +364,7 @@ static bool IsHighMemSystem()
 /**
  * Maximum zoom amount, always used, even if a page asks for higher.
  */
-static const CSSToParentLayerScale MAX_ZOOM(8.0f);
+static const CSSToParentLayerScale MAX_ZOOM(4.0f);
 
 /**
  * Minimum zoom amount, always used, even if a page asks for lower.
