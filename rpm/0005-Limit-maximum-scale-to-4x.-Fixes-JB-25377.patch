@@ -1,7 +1,7 @@
-From ecbdc3e671fbf86ca5556f9c6c995a45e103dec8 Mon Sep 17 00:00:00 2001
+From e4d3b893d9bf919c7afd534918218a203714054a Mon Sep 17 00:00:00 2001
 From: Raine Makelainen <raine.makelainen@jolla.com>
 Date: Mon, 12 Oct 2015 16:22:59 +0300
-Subject: [PATCH 4/4] Limit maximum scale to 4x. Fixes JB#25377
+Subject: [PATCH 5/5] Limit maximum scale to 4x. Fixes JB#25377
 
 The default zoom contraints now matches to the EmbedContentController.
 ---

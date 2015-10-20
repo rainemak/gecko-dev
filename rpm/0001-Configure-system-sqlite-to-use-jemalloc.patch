@@ -1,7 +1,7 @@
-From 46b9ab1170c9a34ab2208c1a9fd8b44ebc5922a1 Mon Sep 17 00:00:00 2001
+From 7eeeacf4e15b7066632268b1ddc278c12e8fc2d8 Mon Sep 17 00:00:00 2001
 From: Raine Makelainen <raine.makelainen@jolla.com>
 Date: Mon, 12 Oct 2015 16:18:14 +0300
-Subject: [PATCH 1/4] Configure system sqlite to use jemalloc
+Subject: [PATCH 1/5] Configure system sqlite to use jemalloc
 
 See bug 25229
 ---

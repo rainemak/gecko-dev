@@ -1,0 +1,279 @@
+From 8198e87454cdc6cea63b2b7780ae35e4a621bb6e Mon Sep 17 00:00:00 2001
+From: Dmitry Rozhkov <dmitry.rozhkov@jolla.com>
+Date: Thu, 15 Oct 2015 18:11:28 +0300
+Subject: [PATCH 2/5] WIP add nsITabChild impl to TabChildHelper
+
+---
+ dom/ipc/TabChild.h                                 |  3 +-
+ .../embedshared/EmbedLiteViewBaseChild.cpp         |  1 +
+ embedding/embedlite/utils/TabChildHelper.cpp       | 51 ++++++++++++++++++++++
+ embedding/embedlite/utils/TabChildHelper.h         |  3 ++
+ embedding/embedlite/utils/WebBrowserChrome.cpp     | 30 ++++++++++++-
+ embedding/embedlite/utils/WebBrowserChrome.h       | 14 +++++-
+ layout/base/nsPresShell.cpp                        |  3 ++
+ 7 files changed, 101 insertions(+), 4 deletions(-)
+
+diff --git a/dom/ipc/TabChild.h b/dom/ipc/TabChild.h
+index 72fc447..f80958b 100644
+--- a/dom/ipc/TabChild.h
++++ b/dom/ipc/TabChild.h
+@@ -457,7 +457,8 @@ public:
+     GetFrom(nsIDocShell* aDocShell)
+     {
+       nsCOMPtr<nsITabChild> tc = do_GetInterface(aDocShell);
+-      return static_cast<TabChild*>(tc.get());
++      return nullptr;
++      //return static_cast<TabChild*>(tc.get());
+     }
+ 
+     static TabChild* GetFrom(nsIPresShell* aPresShell);
+diff --git a/embedding/embedlite/embedshared/EmbedLiteViewBaseChild.cpp b/embedding/embedlite/embedshared/EmbedLiteViewBaseChild.cpp
+index a4c89bf..6125b3b 100644
+--- a/embedding/embedlite/embedshared/EmbedLiteViewBaseChild.cpp
++++ b/embedding/embedlite/embedshared/EmbedLiteViewBaseChild.cpp
+@@ -263,6 +263,7 @@ EmbedLiteViewBaseChild::InitGeckoWindow(const uint32_t& parentId, const bool& is
+   }
+ 
+   mHelper = new TabChildHelper(this);
++  mChrome->SetTabChildHelper(mHelper.get());
+   gfxSize size(bounds.width, bounds.height);
+   mHelper->ReportSizeUpdate(size);
+ 
+diff --git a/embedding/embedlite/utils/TabChildHelper.cpp b/embedding/embedlite/utils/TabChildHelper.cpp
+index 5ca0525..c8c3f4f 100644
+--- a/embedding/embedlite/utils/TabChildHelper.cpp
++++ b/embedding/embedlite/utils/TabChildHelper.cpp
+@@ -160,6 +160,7 @@ TabChildHelper::Unload()
+ 
+ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(TabChildHelper)
+   NS_INTERFACE_MAP_ENTRY(nsIDOMEventListener)
++  NS_INTERFACE_MAP_ENTRY(nsITabChild)
+   NS_INTERFACE_MAP_ENTRY(nsIObserver)
+ NS_INTERFACE_MAP_END_INHERITING(TabChildBase)
+ 
+@@ -461,3 +462,53 @@ TabChildHelper::ReportSizeUpdate(const gfxSize& aSize)
+ 
+   HandlePossibleViewportChange(oldScreenSize);
+ }
++// -- nsITabChild --------------
++
++NS_IMETHODIMP
++TabChildHelper::GetMessageManager(nsIContentFrameMessageManager** aResult)
++{
++  if (mTabChildGlobal) {
++    NS_ADDREF(*aResult = mTabChildGlobal);
++    return NS_OK;
++  }
++  *aResult = nullptr;
++  return NS_ERROR_FAILURE;
++}
++
++NS_IMETHODIMP
++TabChildHelper::GetWebBrowserChrome(nsIWebBrowserChrome3** aWebBrowserChrome)
++{
++  NS_IF_ADDREF(*aWebBrowserChrome = mWebBrowserChrome);
++  return NS_OK;
++}
++
++NS_IMETHODIMP
++TabChildHelper::SetWebBrowserChrome(nsIWebBrowserChrome3* aWebBrowserChrome)
++{
++  mWebBrowserChrome = aWebBrowserChrome;
++  return NS_OK;
++}
++
++void
++TabChildHelper::SendRequestFocus(bool aCanFocus)
++{
++  LOGNI();
++}
++
++void
++TabChildHelper::EnableDisableCommands(const nsAString& aAction,
++                                      nsTArray<nsCString>& aEnabledCommands,
++                                      nsTArray<nsCString>& aDisabledCommands)
++{
++  LOGNI();
++}
++
++NS_IMETHODIMP
++TabChildHelper::GetTabId(uint64_t* aId)
++{
++  LOGNI();
++  *aId = 1;//mView->mId;
++  return NS_OK;
++}
++
++// -- end of nsITabChild -------
+diff --git a/embedding/embedlite/utils/TabChildHelper.h b/embedding/embedlite/utils/TabChildHelper.h
+index 445cf0c..ce82751 100644
+--- a/embedding/embedlite/utils/TabChildHelper.h
++++ b/embedding/embedlite/utils/TabChildHelper.h
+@@ -10,6 +10,7 @@
+ #include "FrameMetrics.h"
+ #include "nsFrameMessageManager.h"
+ #include "nsIWebNavigation.h"
++#include "nsITabChild.h"
+ #include "nsIWidget.h"
+ #include "InputData.h"
+ #include "nsDataHashtable.h"
+@@ -27,6 +28,7 @@ namespace embedlite {
+ class EmbedLiteViewChildIface;
+ class TabChildHelper : public mozilla::dom::TabChildBase,
+                        public nsIDOMEventListener,
++                       public nsITabChild,
+                        public nsIObserver
+ {
+ public:
+@@ -35,6 +37,7 @@ public:
+ 
+   NS_DECL_ISUPPORTS_INHERITED
+   NS_DECL_NSIDOMEVENTLISTENER
++  NS_DECL_NSITABCHILD
+   NS_DECL_NSIOBSERVER
+ 
+   bool RecvUpdateFrame(const mozilla::layers::FrameMetrics& aFrameMetrics);
+diff --git a/embedding/embedlite/utils/WebBrowserChrome.cpp b/embedding/embedlite/utils/WebBrowserChrome.cpp
+index 845a7f9..24713be 100644
+--- a/embedding/embedlite/utils/WebBrowserChrome.cpp
++++ b/embedding/embedlite/utils/WebBrowserChrome.cpp
+@@ -30,6 +30,7 @@
+ #include "nsIEmbedBrowserChromeListener.h"
+ #include "nsIBaseWindow.h"
+ #include "ScriptSettings.h" // for AutoNoJSAPI
++#include "TabChildHelper.h"
+ 
+ #define MOZ_AFTER_PAINT_LITERAL "MozAfterPaint"
+ #define MOZ_scroll "scroll"
+@@ -58,6 +59,7 @@ WebBrowserChrome::~WebBrowserChrome()
+ 
+ NS_IMPL_ISUPPORTS(WebBrowserChrome,
+                   nsIWebBrowserChrome,
++                  nsIWebBrowserChrome2,
+                   nsIWebBrowserChromeFocus,
+                   nsIInterfaceRequestor,
+                   nsIEmbeddingSiteWindow,
+@@ -68,6 +70,14 @@ NS_IMETHODIMP WebBrowserChrome::GetInterface(const nsIID& aIID, void** aInstance
+ {
+   NS_ENSURE_ARG_POINTER(aInstancePtr);
+ 
++  if (aIID.Equals(NS_GET_IID(nsITabChild))) {
++    printf("** WebBrowserChrome::GetInterface for nsITabChild\n");
++    nsCOMPtr<nsITabChild> tabChildHelper;
++    tabChildHelper = mHelper;
++    tabChildHelper.forget(aInstancePtr);
++    return NS_OK;
++  }
++
+   *aInstancePtr = 0;
+   if (aIID.Equals(NS_GET_IID(nsIDOMWindow))) {
+     if (!mWebBrowser) {
+@@ -79,7 +89,17 @@ NS_IMETHODIMP WebBrowserChrome::GetInterface(const nsIID& aIID, void** aInstance
+   return QueryInterface(aIID, aInstancePtr);
+ }
+ 
+-NS_IMETHODIMP WebBrowserChrome::SetStatus(uint32_t /* statusType*/, const char16_t* /*status*/)
++NS_IMETHODIMP WebBrowserChrome::SetStatus(uint32_t aStatusType, const char16_t* aStatus)
++{
++  return SetStatusWithContext(aStatusType,
++      aStatus ? static_cast<const nsString &>(nsDependentString(aStatus))
++              : EmptyString(),
++      nullptr);
++}
++
++NS_IMETHODIMP WebBrowserChrome::SetStatusWithContext(uint32_t aStatusType,
++                                                     const nsAString& aStatusText,
++                                                     nsISupports* aStatusContext)
+ {
+   LOGNI();
+   return NS_OK;
+@@ -656,3 +676,11 @@ void WebBrowserChrome::RemoveEventHandler()
+   target->RemoveEventListener(NS_LITERAL_STRING(MOZ_scroll), this,  PR_FALSE);
+   target->RemoveEventListener(NS_LITERAL_STRING(MOZ_AFTER_PAINT_LITERAL), this,  PR_FALSE);
+ }
++
++void WebBrowserChrome::SetTabChildHelper(TabChildHelper* aHelper)
++{
++  NS_ASSERTION(aHelper, "TabChildHelper can't be unset");
++  NS_ASSERTION(!mTabChildHelper, "TabChildHelper can be set only once");
++
++  mHelper = aHelper;
++}
+diff --git a/embedding/embedlite/utils/WebBrowserChrome.h b/embedding/embedlite/utils/WebBrowserChrome.h
+index 94e953c..48bc66c 100644
+--- a/embedding/embedlite/utils/WebBrowserChrome.h
++++ b/embedding/embedlite/utils/WebBrowserChrome.h
+@@ -8,7 +8,7 @@
+ 
+ #include "nsCOMPtr.h"
+ #include "nsIWebBrowser.h"
+-#include "nsIWebBrowserChrome.h"
++#include "nsIWebBrowserChrome2.h"
+ #include "nsIWebBrowserChromeFocus.h"
+ #include "nsIWebProgressListener.h"
+ #include "nsIEmbeddingSiteWindow.h"
+@@ -23,8 +23,14 @@
+ 
+ #define kNotFound -1
+ 
++namespace mozilla {
++namespace embedlite {
++  class TabChildHelper;
++}
++}
++
+ class nsIEmbedBrowserChromeListener;
+-class WebBrowserChrome : public nsIWebBrowserChrome,
++class WebBrowserChrome : public nsIWebBrowserChrome2,
+                          public nsIWebProgressListener,
+                          public nsIWebBrowserChromeFocus,
+                          public nsIEmbeddingSiteWindow,
+@@ -35,6 +41,7 @@ class WebBrowserChrome : public nsIWebBrowserChrome,
+ public:
+   NS_DECL_ISUPPORTS
+   NS_DECL_NSIWEBBROWSERCHROME
++  NS_DECL_NSIWEBBROWSERCHROME2
+   NS_DECL_NSIWEBPROGRESSLISTENER
+   NS_DECL_NSIWEBBROWSERCHROMEFOCUS
+   NS_DECL_NSIEMBEDDINGSITEWINDOW
+@@ -47,6 +54,8 @@ public:
+   void SetEventHandler();
+   void RemoveEventHandler();
+ 
++  void SetTabChildHelper(mozilla::embedlite::TabChildHelper* aHelper);
++
+ protected:
+   virtual ~WebBrowserChrome();
+ 
+@@ -71,6 +80,7 @@ private:
+   nsCOMPtr<nsIObserverService> mObserverService;
+   nsIEmbedBrowserChromeListener* mListener;
+   nsString mTitle;
++  nsRefPtr<mozilla::embedlite::TabChildHelper> mHelper;
+ };
+ 
+ #endif /* Header guard */
+diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
+index 938df78..8d03aa9 100644
+--- a/layout/base/nsPresShell.cpp
++++ b/layout/base/nsPresShell.cpp
+@@ -10979,6 +10979,8 @@ PresShell::SetIsActive(bool aIsActive)
+   // and (ii) has easy access to the TabChild.  So we use this
+   // notification to signal the TabChild to drop its layer tree and
+   // stop trying to repaint.
++
++  /*
+   if (TabChild* tab = TabChild::GetFrom(this)) {
+     if (aIsActive) {
+       tab->MakeVisible();
+@@ -10993,6 +10995,7 @@ PresShell::SetIsActive(bool aIsActive)
+       tab->MakeHidden();
+     }
+   }
++  */
+ 
+   return rv;
+ }
+-- 
+2.1.4
+
