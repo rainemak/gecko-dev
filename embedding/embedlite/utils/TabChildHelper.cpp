@@ -31,6 +31,7 @@
 #include "nsLayoutUtils.h"
 #include "nsIDocumentInlines.h"
 #include "APZCCallbackHelper.h"
+#include "EmbedFrame.h"
 
 static const char BEFORE_FIRST_PAINT[] = "before-first-paint";
 static const char CANCEL_DEFAULT_PAN_ZOOM[] = "cancel-default-pan-zoom";
@@ -363,6 +364,23 @@ TabChildHelper::DoSendAsyncMessage(JSContext* aCx,
                                    JS::Handle<JSObject *> aCpows,
                                    nsIPrincipal* aPrincipal)
 {
+  nsCOMPtr<nsIMessageBroadcaster> globalMM =
+      do_GetService("@mozilla.org/globalmessagemanager;1");
+  nsRefPtr<nsFrameMessageManager> mm =
+      static_cast<nsFrameMessageManager*>(globalMM.get());
+  // content frame message manager
+  nsRefPtr<nsFrameMessageManager> cfmm =
+      static_cast<nsFrameMessageManager*>(mTabChildGlobal->mMessageManager.get());
+
+  nsCOMPtr<nsPIDOMWindow> pwindow = do_GetInterface(WebNavigation());
+  nsCOMPtr<nsIDOMWindow> window = do_QueryInterface(pwindow);
+  nsRefPtr<EmbedFrame> efptr = new EmbedFrame();
+  efptr->mWindow = window;
+  efptr->mMessageManager = mTabChildGlobal;
+  SameProcessCpowHolder cpows(js::GetRuntime(aCx), aCpows);
+  mm->ReceiveMessage(efptr, aMessage, false, &aData, &cpows, aPrincipal, nullptr);
+  cfmm->ReceiveMessage(efptr, aMessage, false, &aData, &cpows, aPrincipal, nullptr);
+
   if (!mView->HasMessageListener(aMessage)) {
     LOGW("Message not registered msg:%s\n", NS_ConvertUTF16toUTF8(aMessage).get());
     return true;
