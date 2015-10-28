@@ -156,11 +156,10 @@ var LoginManagerContent = {
     let requestId = this._getRandomId();
     messageData.requestId = requestId;
 
-    messageManager.sendAsyncMessage(name, messageData);
-
     let deferred = Promise.defer();
     requestData.promise = deferred;
     this._requests.set(requestId, requestData);
+    messageManager.sendAsyncMessage(name, messageData);
     return deferred.promise;
   },
 
