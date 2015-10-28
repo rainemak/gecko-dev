@@ -172,6 +172,8 @@ var LoginManagerParent = {
   },
 
   receiveMessage: function (msg) {
+    msg.target.QueryInterface(Ci.nsIEmbedFrame);
+    log("receiveMessage " + msg.name + " msg.target: " + msg.target);
     let data = msg.data;
     switch (msg.name) {
       case "RemoteLogins:findLogins": {
