@@ -456,8 +456,11 @@ public:
     static inline TabChild*
     GetFrom(nsIDocShell* aDocShell)
     {
-      nsCOMPtr<nsITabChild> tc = do_GetInterface(aDocShell);
-      return static_cast<TabChild*>(tc.get());
+      // Even though TabChild is not used in EmbedLite somehow the static cast
+      // below can return non-null pointer. Let's return nullptr explcitly.
+      return nullptr;
+      //nsCOMPtr<nsITabChild> tc = do_GetInterface(aDocShell);
+      //return static_cast<TabChild*>(tc.get());
     }
 
     static TabChild* GetFrom(nsIPresShell* aPresShell);
