@@ -2919,7 +2919,10 @@ void
 TabChild::MakeVisible()
 {
     if (mWidget) {
+      printf("------- make visible start\n");
         mWidget->Show(true);
+
+      printf("------- make visible end\n");
     }
 }
 

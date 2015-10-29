@@ -67,6 +67,7 @@ public:
 
   NS_IMETHOD Show(bool aState) override;
   virtual bool IsVisible() const override {
+    printf("------------ is visible: %d\n", mVisible);
     return mVisible;
   }
   NS_IMETHOD ConstrainPosition(bool     /*ignored aAllowSlop*/,
@@ -140,6 +141,7 @@ public:
 
   virtual nsIntRect GetNaturalBounds() override;
   virtual bool NeedsPaint() override;
+  virtual bool WidgetPaintsBackground() override;
 
   virtual LayerManager*
   GetLayerManager(PLayerTransactionChild* aShadowManager,

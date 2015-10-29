@@ -283,6 +283,7 @@ EmbedLitePuppetWidget::Destroy()
 NS_IMETHODIMP
 EmbedLitePuppetWidget::Show(bool aState)
 {
+  printf("show enabled: %d set visible: %d, was visible: %d\n", mEnabled, aState, mVisible);
   NS_ASSERTION(mEnabled,
                "does it make sense to Show()/Hide() a disabled widget?");
 
@@ -290,7 +291,7 @@ EmbedLitePuppetWidget::Show(bool aState)
     return NS_OK;
   }
 
-  LOGT("this:%p, state: %i, LM:%p", this, aState, mLayerManager.get());
+  printf("this:%p, state: %i, LM:%p \n", this, aState, mLayerManager.get());
 
   bool wasVisible = mVisible;
   mVisible = aState;
@@ -300,10 +301,14 @@ EmbedLitePuppetWidget::Show(bool aState)
     mLayerManager->ClearCachedResources();
   }
 
-  if (!wasVisible && mVisible) {
+  printf("show enabled bounds: w: %d, h: %d\n", mNaturalBounds.width, mNaturalBounds.height);
+
+  if (!wasVisible && mVisible && mLayerManager) {
     Resize(mNaturalBounds.width, mNaturalBounds.height, false);
     Invalidate(mBounds);
   }
+
+  printf("show enabled mView: %p\n", mView);
 
   // Only propagate visibility changes for widgets backing EmbedLiteView.
   if (mView) {
@@ -534,7 +539,7 @@ EmbedLitePuppetWidget::RemoveIMEComposition()
 GLContext*
 EmbedLitePuppetWidget::GetGLContext() const
 {
-  LOGT("this:%p, UseExternalContext:%d", this, sUseExternalGLContext);
+  printf("this:%p, UseExternalContext: %d window:%p\n", this, sUseExternalGLContext, mWindow);
   if (sUseExternalGLContext) {
     EmbedLiteWindow* window = EmbedLiteApp::GetInstance()->GetWindowByID(mWindow->GetUniqueID());
     void* context = nullptr;
@@ -579,9 +584,15 @@ EmbedLitePuppetWidget::NeedsPaint()
 {
   // Widgets representing EmbedLite view and window don't need to paint anything.
   if (mWindow || mView) {
+    printf("needs repaint... NOT\n");
     return false;
   }
   return nsIWidget::NeedsPaint();
+}
+
+bool EmbedLitePuppetWidget::WidgetPaintsBackground()
+{
+  return true;
 }
 
 LayerManager*
@@ -769,7 +780,14 @@ bool
 EmbedLitePuppetWidget::PreRender(LayerManagerComposite *aManager)
 {
   MOZ_ASSERT(mWindow);
+  printf("PreRender.... %d\n", mVisible);
+  // This widget has been marked as invisible. Do not allow rendering.
+  if (!mVisible) {
+    return false;
+  }
+
   EmbedLiteWindow* window = EmbedLiteApp::GetInstance()->GetWindowByID(mWindow->GetUniqueID());
+  printf("Terve... %d\n", mVisible);
   if (window) {
     return window->GetListener()->PreRender();
   }
