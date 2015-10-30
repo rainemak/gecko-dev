@@ -278,7 +278,7 @@ EmbedLiteViewBaseChild::InitGeckoWindow(const uint32_t& parentId, const bool& is
   }
 
   OnGeckoWindowInitialized();
-
+// RecvSetIsActive(true);
   unused << SendInitialized();
 }
 
