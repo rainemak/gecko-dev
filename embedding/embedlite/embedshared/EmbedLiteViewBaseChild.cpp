@@ -277,6 +277,20 @@ EmbedLiteViewBaseChild::InitGeckoWindow(const uint32_t& parentId, const bool& is
     widget->UpdateSize();
   }
 
+/*
+  rv = baseWindow->SetVisibility(true);
+  if (NS_FAILED(rv)) {
+    NS_ERROR("SetVisibility failed!");
+  }
+*/
+
+  static bool firstViewCreated = false;
+  EmbedLiteWindowBaseChild *windowBase = static_cast<EmbedLiteWindowBaseChild*>(mWindow);
+  if (!firstViewCreated && windowBase && windowBase->GetWidget()) {
+    windowBase->GetWidget()->SetActive(true);
+    firstViewCreated = true;
+  }
+
   OnGeckoWindowInitialized();
 
   unused << SendInitialized();
@@ -507,8 +521,24 @@ EmbedLiteViewBaseChild::RecvSetIsActive(const bool& aIsActive)
     fm->WindowLowered(mDOMWindow);
     LOGT("Deactivate browser");
   }
+
+  // Set the window active when 
+/*
+  static bool firstViewActivated = false;
+  EmbedLiteWindowBaseChild *windowBase = static_cast<EmbedLiteWindowBaseChild*>(mWindow);
+  if (!firstViewActivated && windowBase && windowBase->GetWidget() && aIsActive) {
+    windowBase->GetWidget()->SetActive(true);
+    firstViewActivated = true;
+  }
+*/
+  EmbedLitePuppetWidget* widget = static_cast<EmbedLitePuppetWidget*>(mWidget.get());
+  if (widget) {
+    widget->SetActive(aIsActive);
+  }
+
   mWebBrowser->SetIsActive(aIsActive);
   mWidget->Show(aIsActive);
+
 
   nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(mWebBrowser);
   baseWindow->SetVisibility(aIsActive);

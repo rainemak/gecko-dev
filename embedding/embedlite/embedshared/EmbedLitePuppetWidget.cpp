@@ -86,6 +86,7 @@ EmbedLitePuppetWidget::EmbedLitePuppetWidget(EmbedLiteWindowBaseChild* window,
   , mView(view)
   , mVisible(false)
   , mEnabled(false)
+  , mActive(false)
   , mHasCompositor(false)
   , mIMEComposing(false)
   , mParent(nullptr)
@@ -187,6 +188,11 @@ EmbedLitePuppetWidget::UpdateSize()
 #endif
 }
 
+void EmbedLitePuppetWidget::SetActive(bool active)
+{
+  mActive = active;
+}
+
 NS_IMETHODIMP
 EmbedLitePuppetWidget::Create(nsIWidget*        aParent,
                               nsNativeWidget    aNativeParent,
@@ -199,6 +205,7 @@ EmbedLitePuppetWidget::Create(nsIWidget*        aParent,
   mParent = static_cast<EmbedLitePuppetWidget*>(aParent);
 
   mEnabled = true;
+  printf(".......... create\n");
   mVisible = mParent ? mParent->mVisible : true;
 
   if (mParent) {
@@ -290,7 +297,7 @@ EmbedLitePuppetWidget::Show(bool aState)
     return NS_OK;
   }
 
-  LOGT("this:%p, state: %i, LM:%p", this, aState, mLayerManager.get());
+  printf("this:%p, state: %i, LM:%p\n", this, aState, mLayerManager.get());
 
   bool wasVisible = mVisible;
   mVisible = aState;
@@ -301,7 +308,9 @@ EmbedLitePuppetWidget::Show(bool aState)
   }
 
   if (!wasVisible && mVisible) {
+    printf("mNatural bounds... %d %d %d %d\n", mNaturalBounds.x, mNaturalBounds.y, mNaturalBounds.width, mNaturalBounds.height);
     Resize(mNaturalBounds.width, mNaturalBounds.height, false);
+    printf("invalidated bound... %d %d %d %d\n", mBounds.x, mBounds.y, mBounds.width, mBounds.height);
     Invalidate(mBounds);
   }
 
@@ -325,7 +334,7 @@ NS_IMETHODIMP
 EmbedLitePuppetWidget::Resize(double aWidth, double aHeight, bool aRepaint)
 {
   nsIntRect oldBounds = mBounds;
-  LOGT("sz[%i,%i]->[%g,%g]", oldBounds.width, oldBounds.height, aWidth, aHeight);
+  printf("sz[%i,%i]->[%g,%g]\n", oldBounds.width, oldBounds.height, aWidth, aHeight);
 
   mNaturalBounds.SizeTo(nsIntSize(NSToIntRound(aWidth), NSToIntRound(aHeight)));
   if (mRotation == ROTATION_0 || mRotation == ROTATION_180) {
@@ -769,6 +778,11 @@ bool
 EmbedLitePuppetWidget::PreRender(LayerManagerComposite *aManager)
 {
   MOZ_ASSERT(mWindow);
+  printf(".......... terve prerender %d %d %p\n", IsVisible(), mActive, this);
+  if (!IsVisible() || !mActive) {
+    return false;
+  }
+
   EmbedLiteWindow* window = EmbedLiteApp::GetInstance()->GetWindowByID(mWindow->GetUniqueID());
   if (window) {
     return window->GetListener()->PreRender();
