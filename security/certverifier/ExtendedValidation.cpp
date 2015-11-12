@@ -1181,14 +1181,14 @@ IdentityInfoInit()
     // version of system NSS is installed). We will just silently avoid
     // treating that root cert as EV.
     if (!entry.cert) {
-#ifdef DEBUG
+#if 0
       // The debug CA structs are at positions 0 to NUM_TEST_EV_ROOTS - 1, and
       // are NOT in the NSS root DB.
       if (iEV < NUM_TEST_EV_ROOTS) {
         continue;
       }
-#endif
       PR_NOT_REACHED("Could not find EV root in NSS storage");
+#endif
       continue;
     }
 

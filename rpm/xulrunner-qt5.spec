@@ -228,6 +228,11 @@ echo "ac_add_options --with-app-name=%{name}" >> "$MOZCONFIG"
 # https://bugzilla.mozilla.org/show_bug.cgi?id=1002002
 echo "ac_add_options --disable-startupcache" >> "$MOZCONFIG"
 
+echo "ac_add_options --enable-debug" >> "${MOZCONFIG}"
+echo "ac_add_options --enable-logging" >> "${MOZCONFIG}"
+echo "ac_add_options --disable-optimize" >> "${MOZCONFIG}"
+
+
 %{__make} -f client.mk build STRIP="/bin/true" %{?jobs:MOZ_MAKE_FLAGS="-j%jobs"}
 
 %install

@@ -4756,6 +4756,7 @@ nsDocShell::LoadURI(const char16_t* aURI,
                     nsIInputStream* aPostStream,
                     nsIInputStream* aHeaderStream)
 {
+//  printf("------ doc shell load uri %s line: %d\n", aURI, __LINE__);
   return LoadURIWithOptions(aURI, aLoadFlags, aReferringURI,
                             mozilla::net::RP_Default, aPostStream,
                             aHeaderStream, nullptr);
@@ -4772,7 +4773,11 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
 {
   NS_ASSERTION((aLoadFlags & 0xf) == 0, "Unexpected flags");
 
-  if (!IsNavigationAllowed()) {
+
+  bool fooNavigate = IsNavigationAllowed();
+  printf("------ LoadURIWithOptions IsNavigationAllowed %d line: %d\n", fooNavigate, __LINE__);
+
+  if (!fooNavigate) {
     return NS_OK; // JS may not handle returning of an error code
   }
   nsCOMPtr<nsIURI> uri;
@@ -4790,6 +4795,8 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
   uriString.StripChars("\r\n");
   NS_ENSURE_TRUE(!uriString.IsEmpty(), NS_ERROR_FAILURE);
 
+  printf("------ LoadURIWithOptions new uri %s line: %d\n", uriString.get(), __LINE__);
+
   rv = NS_NewURI(getter_AddRefs(uri), uriString);
   if (uri) {
     aLoadFlags &= ~LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
@@ -4797,15 +4804,18 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
 
   nsCOMPtr<nsIURIFixupInfo> fixupInfo;
   if (sURIFixup) {
+    printf("------ LoadURIWithOptions has sURIFixup LINE: %d\n", __LINE__);
     // Call the fixup object.  This will clobber the rv from NS_NewURI
     // above, but that's fine with us.  Note that we need to do this even
     // if NS_NewURI returned a URI, because fixup handles nested URIs, etc
     // (things like view-source:mozilla.org for example).
     uint32_t fixupFlags = 0;
     if (aLoadFlags & LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
+      printf("------ LoadURIWithOptions allow keyword lookup LINE: %d\n", __LINE__);
       fixupFlags |= nsIURIFixup::FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
     }
     if (aLoadFlags & LOAD_FLAGS_FIXUP_SCHEME_TYPOS) {
+      printf("------ LoadURIWithOptions fix scheme typos LINE: %d\n", __LINE__);
       fixupFlags |= nsIURIFixup::FIXUP_FLAG_FIX_SCHEME_TYPOS;
     }
     nsCOMPtr<nsIInputStream> fixupStream;
@@ -4826,6 +4836,8 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
     }
 
     if (aLoadFlags & LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
+      printf("------ LoadURIWithOptions allow keyword lookup 22 LINE: %d\n", __LINE__);
+
       nsCOMPtr<nsIObserverService> serv = services::GetObserverService();
       if (serv) {
         serv->NotifyObservers(fixupInfo, "keyword-uri-fixup", aURI);
@@ -4836,8 +4848,11 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
   // what happens
 
   if (NS_ERROR_MALFORMED_URI == rv) {
+    printf("------ LoadURIWithOptions display load error LINE: %d\n", __LINE__);
     DisplayLoadError(rv, uri, aURI, nullptr);
   }
+
+  printf("------ LoadURIWithOptions status %d uri: %d LINE: %d\n", rv, !!uri, __LINE__);
 
   if (NS_FAILED(rv) || !uri) {
     return NS_ERROR_FAILURE;
@@ -4861,6 +4876,7 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
   nsCOMPtr<nsIDocShellLoadInfo> loadInfo;
   rv = CreateLoadInfo(getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
+    printf("------ LoadURIWithOptions CreateLoadInfo failed %d LINE: %d\n", rv, __LINE__);
     return rv;
   }
 
@@ -4887,7 +4903,10 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
     fixupInfo->GetKeywordProviderName(searchProvider);
     fixupInfo->GetKeywordAsSent(keyword);
     MaybeNotifyKeywordSearchLoading(searchProvider, keyword);
+    printf("------ LoadURIWithOptions MaybeNotifyKeywordSearchLoading search provider: %s keyword: %d LINE: %d\n", searchProvider.get(), keyword.get(), __LINE__);
   }
+
+  printf("------ LoadURIWithOptions DO LOAD LINE: %d\n", __LINE__);
 
   rv = LoadURI(uri, loadInfo, extraFlags, true);
 
