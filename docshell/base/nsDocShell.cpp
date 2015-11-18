@@ -341,7 +341,9 @@ CheckPingURI(nsIURI* aURI, nsIContent* aContent)
                                  EmptyCString(), // mime hint
                                  nullptr, // extra
                                  &shouldLoad);
-  return NS_SUCCEEDED(rv) && NS_CP_ACCEPTED(shouldLoad);
+  bool tmp = NS_SUCCEEDED(rv) && NS_CP_ACCEPTED(shouldLoad);
+  printf("------ nsDocShell::CheckPingURI shouldLoad: %d accepted: %d line: %d\n", shouldLoad, tmp, __LINE__);
+  return tmp;
 }
 
 typedef void (*ForEachPingCallback)(void* closure, nsIContent* content,
@@ -1369,10 +1371,12 @@ nsDocShell::LoadURI(nsIURI* aURI,
   // firing beforeunload, so we do need to check if *beforeunload* is currently
   // firing, so we call IsNavigationAllowed rather than just IsPrintingOrPP.
   if (!IsNavigationAllowed(true, false)) {
+    printf("Load uri navigation not allowed LINE: %d\n", __LINE__);
     return NS_OK; // JS may not handle returning of an error code
   }
 
   if (DoAppRedirectIfNeeded(aURI, aLoadInfo, aFirstParty)) {
+    printf("Load uri do app redirect... LINE: %d\n", __LINE__);
     return NS_OK;
   }
 
@@ -1422,6 +1426,8 @@ nsDocShell::LoadURI(nsIURI* aURI,
     aLoadInfo->GetSrcdocData(srcdoc);
     aLoadInfo->GetSourceDocShell(getter_AddRefs(sourceDocShell));
     aLoadInfo->GetBaseURI(getter_AddRefs(baseURI));
+
+    printf("Load uri aLoadInfo... LINE: %d\n", __LINE__);
   }
 
 #if defined(PR_LOGGING) && defined(DEBUG)
@@ -1441,6 +1447,8 @@ nsDocShell::LoadURI(nsIURI* aURI,
     GetSameTypeParent(getter_AddRefs(parentAsItem));
     nsCOMPtr<nsIDocShell> parentDS(do_QueryInterface(parentAsItem));
     uint32_t parentLoadType;
+
+    printf("Load uri no LOAD_FLAGS_REPLACE_HISTORY and no shEntry... LINE: %d\n", __LINE__);
 
     if (parentDS && parentDS != static_cast<nsIDocShell*>(this)) {
       /* OK. It is a subframe. Checkout the
@@ -1550,7 +1558,7 @@ nsDocShell::LoadURI(nsIURI* aURI,
     PR_LOG(gDocShellLog, PR_LOG_DEBUG,
            ("nsDocShell[%p]: loading from session history", this));
 #endif
-
+printf("Load uri has shEntry!!... LINE: %d\n", __LINE__);
     return LoadHistoryEntry(shEntry, loadType);
   }
 
@@ -1562,6 +1570,8 @@ nsDocShell::LoadURI(nsIURI* aURI,
   // LOAD_STOP_CONTENT:  location.href = ..., location.assign(...)
   if ((loadType == LOAD_NORMAL || loadType == LOAD_STOP_CONTENT) &&
       ShouldBlockLoadingForBackButton()) {
+
+    printf("Load uri ShouldBlockLoadingForBackButton!!... LINE: %d\n", __LINE__);
     return NS_OK;
   }
 
@@ -4886,8 +4896,10 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
    */
   uint32_t loadType;
   if (aLoadFlags & LOAD_FLAGS_ALLOW_MIXED_CONTENT) {
+    printf("------------ LoadURIWithOptions mixed content LINE: %d\n", __LINE__);
     loadType = MAKE_LOAD_TYPE(LOAD_NORMAL_ALLOW_MIXED_CONTENT, aLoadFlags);
   } else {
+    printf("------------ LoadURIWithOptions LOAD_NORMAL content LINE: %d\n", __LINE__);
     loadType = MAKE_LOAD_TYPE(LOAD_NORMAL, aLoadFlags);
   }
 
@@ -4903,7 +4915,7 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
     fixupInfo->GetKeywordProviderName(searchProvider);
     fixupInfo->GetKeywordAsSent(keyword);
     MaybeNotifyKeywordSearchLoading(searchProvider, keyword);
-    printf("------ LoadURIWithOptions MaybeNotifyKeywordSearchLoading search provider: %s keyword: %d LINE: %d\n", searchProvider.get(), keyword.get(), __LINE__);
+    printf("------ LoadURIWithOptions MaybeNotifyKeywordSearchLoading search provider: %s keyword: %s LINE: %d\n", searchProvider.get(), keyword.get(), __LINE__);
   }
 
   printf("------ LoadURIWithOptions DO LOAD LINE: %d\n", __LINE__);
@@ -9021,6 +9033,15 @@ nsDocShell::CreateContentViewer(const char* aContentType,
     mFailedChannel = nullptr;
     mFailedURI = nullptr;
 
+#if defined(PR_LOGGING) && defined(DEBUG)
+  if (PR_LOG_TEST(gDocShellLog, PR_LOG_DEBUG)) {
+    PR_LOG(gDocShellLog, PR_LOG_DEBUG,
+           ("nsDocShell[%p]: LOAD_ERROR_PAGE LINE: %d\n",
+            this, __LINE__));
+  }
+#endif
+
+
     // Create an shistory entry for the old load.
     if (failedURI) {
       bool errorOnLocationChangeNeeded = OnNewURI(
@@ -9703,8 +9724,13 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                                  nullptr,  // extra
                                  &shouldLoad);
 
+
+
+  printf("------ nsDocShell::InternalLoad shouldLoad: %d line: %d\n", shouldLoad, __LINE__);
+
   if (NS_FAILED(rv) || NS_CP_REJECTED(shouldLoad)) {
     if (NS_SUCCEEDED(rv) && shouldLoad == nsIContentPolicy::REJECT_TYPE) {
+      printf("------ nsDocShell::InternalLoad blocked show alt: %d\n", __LINE__);
       return NS_ERROR_CONTENT_BLOCKED_SHOW_ALT;
     }
 
@@ -10035,6 +10061,14 @@ nsDocShell::InternalLoad(nsIURI* aURI,
       (!aSHEntry && !aPostData &&
        sameExceptHashes && !newHash.IsEmpty());
 
+#if defined(PR_LOGGING) && defined(DEBUG)
+  if (PR_LOG_TEST(gDocShellLog, PR_LOG_DEBUG)) {
+    PR_LOG(gDocShellLog, PR_LOG_DEBUG,
+           ("nsDocShell[%p]: doShortCircuitedLoad: %d\n",
+            this, __LINE__));
+  }
+#endif
+
     if (doShortCircuitedLoad) {
       // Save the position of the scrollers.
       nscoord cx = 0, cy = 0;
@@ -10219,7 +10253,11 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   if (browserChrome3) {
     bool shouldLoad;
     rv = browserChrome3->ShouldLoadURI(this, aURI, aReferrer, &shouldLoad);
+    printf("nsDocShell[%p]: browserChrome3 shouldLoad: %d LINE: %d\n",
+            this, shouldLoad, __LINE__);
     if (NS_SUCCEEDED(rv) && !shouldLoad) {
+      printf("nsDocShell[%p]: browserChrome3 return!! LINE: %d\n",
+              this, __LINE__);
       return NS_OK;
     }
   }
@@ -10229,6 +10267,9 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   // Hold onto |this| until we return, to prevent a crash from happening.
   // (bug#331040)
   nsCOMPtr<nsIDocShell> kungFuDeathGrip(this);
+
+  printf("nsDocShell[%p]: isJavaScript... %d!! LINE: %d\n",
+          this, isJavaScript, __LINE__);
 
   // Don't init timing for javascript:, since it generally doesn't
   // actually start a load or anything.  If it does, we'll init
@@ -10243,6 +10284,10 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     MaybeInitTiming();
   }
   bool timeBeforeUnload = aFileName.IsVoid();
+
+  printf("nsDocShell[%p]: isJavaScript... %d timeBeforeUnload: %d LINE: %d\n",
+          this, isJavaScript, timeBeforeUnload, __LINE__);
+
   if (mTiming && timeBeforeUnload) {
     mTiming->NotifyBeforeUnload();
   }
@@ -10252,9 +10297,15 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     bool okToUnload;
     rv = mContentViewer->PermitUnload(false, &okToUnload);
 
+    printf("nsDocShell[%p]: Check if the page doesn't want to be unloaded: %d LINE: %d\n",
+            this, okToUnload, __LINE__);
+
+
     if (NS_SUCCEEDED(rv) && !okToUnload) {
       // The user chose not to unload the page, interrupt the
       // load.
+      printf("nsDocShell[%p]: interrupt load LINE: %d\n", this, __LINE__);
+
       return NS_OK;
     }
   }
@@ -10287,14 +10338,17 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
     nsCOMPtr<nsIContentViewer> zombieViewer;
     if (mContentViewer) {
+      printf("nsDocShell[%p]: has mContentViewer LINE: %d\n", this, __LINE__);
       mContentViewer->GetPreviousViewer(getter_AddRefs(zombieViewer));
     }
 
     if (zombieViewer ||
         LOAD_TYPE_HAS_FLAGS(aLoadType, LOAD_FLAGS_STOP_CONTENT)) {
       rv = Stop(nsIWebNavigation::STOP_ALL);
+      printf("nsDocShell[%p]: stop all result: %d LINE: %d\n", this, rv, __LINE__);
     } else {
       rv = Stop(nsIWebNavigation::STOP_NETWORK);
+      printf("nsDocShell[%p]: stop network result: %d LINE: %d\n", this, rv, __LINE__);
     }
 
     if (NS_FAILED(rv)) {
@@ -10373,6 +10427,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                         nsINetworkPredictor::PREDICT_LOAD, this, nullptr);
 
   nsCOMPtr<nsIRequest> req;
+  printf("nsDocShell[%p]: about to DoURILoad LINE: %d\n", this, __LINE__);
   rv = DoURILoad(aURI, aReferrer,
                  !(aFlags & INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER),
                  aReferrerPolicy,
@@ -10484,6 +10539,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   if (aFirstParty) {
     // tag first party URL loads
     loadFlags |= nsIChannel::LOAD_INITIAL_DOCUMENT_URI;
+    printf("nsDocShell[%p]: aFirstParty ... DoURILoad LINE: %d\n", this, __LINE__);
   }
 
   if (mLoadType == LOAD_ERROR_PAGE) {
@@ -10492,6 +10548,8 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   }
 
   if (IsFrame()) {
+    printf("nsDocShell[%p]: isFrame LINE: %d\n", this, __LINE__);
+
     // Only allow view-source scheme in top-level docshells. view-source is
     // the only scheme to which this applies at the moment due to potential
     // timing attacks to read data from cross-origin iframes. If this widens
@@ -10505,6 +10563,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
       bool isViewSource = false;
       rv = tempURI->SchemeIs("view-source", &isViewSource);
       if (NS_FAILED(rv) || isViewSource) {
+        printf("nsDocShell[%p]: unknown protocol LINE: %d\n", this, __LINE__);
         return NS_ERROR_UNKNOWN_PROTOCOL;
       }
       nestedURI->GetInnerURI(getter_AddRefs(tempURI));
@@ -10519,8 +10578,10 @@ nsDocShell::DoURILoad(nsIURI* aURI,
 
   nsCOMPtr<nsINode> requestingNode;
   if (mScriptGlobal) {
+    printf("nsDocShell[%p]: mScriptGlobal LINE: %d\n", this, __LINE__);
     requestingNode = mScriptGlobal->GetFrameElementInternal();
     if (!requestingNode) {
+      printf("nsDocShell[%p]: no requestingNode LINE: %d\n", this, __LINE__);
       requestingNode = mScriptGlobal->GetExtantDoc();
     }
   }
@@ -10529,6 +10590,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   // only inherit if we have a triggeringPrincipal
   bool inherit = false;
 
+
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = do_QueryInterface(aOwner);
   if (triggeringPrincipal) {
     inherit = nsContentUtils::ChannelShouldInheritPrincipal(
@@ -10536,23 +10598,30 @@ nsDocShell::DoURILoad(nsIURI* aURI,
       aURI,
       true, // aInheritForAboutBlank
       isSrcdoc);
+    printf("nsDocShell[%p]: triggeringPrincipal LINE: %d\n", this, __LINE__);
   } else if (!triggeringPrincipal && aReferrerURI) {
     rv = CreatePrincipalFromReferrer(aReferrerURI,
                                      getter_AddRefs(triggeringPrincipal));
     NS_ENSURE_SUCCESS(rv, rv);
+    printf("nsDocShell[%p]: !triggeringPrincipal && aReferrerURI LINE: %d\n", this, __LINE__);
   } else {
     triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
+    printf("nsDocShell[%p]: system principal LINE: %d\n", this, __LINE__);
   }
+  printf("nsDocShell[%p]: is sand boxed: %d inherit: %d LINE: %d\n", this, isSandBoxed, inherit, __LINE__);
 
   nsSecurityFlags securityFlags = nsILoadInfo::SEC_NORMAL;
   if (inherit) {
     securityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+    printf("nsDocShell[%p]: SEC_FORCE_INHERIT_PRINCIPAL LINE: %d\n", this, __LINE__);
   }
   if (isSandBoxed) {
     securityFlags |= nsILoadInfo::SEC_SANDBOXED;
+    printf("nsDocShell[%p]: SEC_SANDBOXED LINE: %d\n", this, __LINE__);
   }
 
   if (!isSrcdoc) {
+    printf("nsDocShell[%p]: !isSrcdoc LINE: %d\n", this, __LINE__);
     nsCOMPtr<nsILoadInfo> loadInfo =
       new LoadInfo(requestingNode ? requestingNode->NodePrincipal() :
                                     triggeringPrincipal.get(),
@@ -10569,7 +10638,9 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                                loadFlags);
 
     if (NS_FAILED(rv)) {
+      printf("nsDocShell[%p]: NS_NewChannelInternal failed LINE: %d\n", this, __LINE__);
       if (rv == NS_ERROR_UNKNOWN_PROTOCOL) {
+        printf("nsDocShell[%p]: NS_NewChannelInternal failed NS_ERROR_UNKNOWN_PROTOCOL LINE: %d\n", this, __LINE__);
         // This is a uri with a protocol scheme we don't know how
         // to handle.  Embedders might still be interested in
         // handling the load, though, so we fire a notification
@@ -10577,13 +10648,16 @@ nsDocShell::DoURILoad(nsIURI* aURI,
         bool abort = false;
         nsresult rv2 = mContentListener->OnStartURIOpen(aURI, &abort);
         if (NS_SUCCEEDED(rv2) && abort) {
+          printf("nsDocShell[%p]: NS_NewChannelInternal abort LINE: %d\n", this, __LINE__);
           // Hey, they're handling the load for us!  How convenient!
           return NS_OK;
         }
       }
+      printf("nsDocShell[%p]: NS_NewChannelInternal return LINE: %d\n", this, __LINE__);
       return rv;
     }
   } else {
+    printf("nsDocShell[%p]: isSrcdoc LINE: %d\n", this, __LINE__);
     nsAutoCString scheme;
     rv = aURI->GetScheme(scheme);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -10626,6 +10700,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   nsCOMPtr<nsIApplicationCacheChannel> appCacheChannel =
     do_QueryInterface(channel);
   if (appCacheChannel) {
+    printf("nsDocShell[%p]: appCacheChannel LINE: %d\n", this, __LINE__);
     // Any document load should not inherit application cache.
     appCacheChannel->SetInheritApplicationCache(false);
 
@@ -10651,8 +10726,11 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   // Make sure to give the caller a channel if we managed to create one
   // This is important for correct error page/session history interaction
   if (aRequest) {
+    printf("nsDocShell[%p]: aRequest LINE: %d\n", this, __LINE__);
     NS_ADDREF(*aRequest = channel);
   }
+
+  printf("nsDocShell[%p]: hint: %s mLoadType: %d, LINE: %d\n", this, aTypeHint, mLoadType, __LINE__);
 
   channel->SetOriginalURI(aURI);
   if (aTypeHint && *aTypeHint) {
@@ -10676,6 +10754,9 @@ nsDocShell::DoURILoad(nsIURI* aURI,
     rv = SetMixedContentChannel(channel);
     NS_ENSURE_SUCCESS(rv, rv);
   } else if (mMixedContentChannel) {
+
+    printf("nsDocShell[%p]: mMixedContentChannel LINE: %d\n", this, __LINE__);
+
     /*
      * If the user "Disables Protection on This Page", we call
      * SetMixedContentChannel for the first time, otherwise
@@ -10825,6 +10906,8 @@ nsDocShell::DoURILoad(nsIURI* aURI,
     }
   }
 
+  printf("nsDocShell[%p]: DoURILoad LINE: %d\n", this, __LINE__);
+
   return rv;
 }
 
@@ -10918,6 +11001,9 @@ nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   loadFlags |= nsIChannel::LOAD_DOCUMENT_URI |
                nsIChannel::LOAD_CALL_CONTENT_SNIFFERS;
 
+  // 65537
+  printf("nsDocShell[%p]: DoChannelLoad: %d LINE: %d\n", this, mLoadType, __LINE__);
+
   // Load attributes depend on load type...
   switch (mLoadType) {
     case LOAD_HISTORY: {
@@ -10974,8 +11060,11 @@ nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   }
 
   if (!aBypassClassifier) {
+    printf("nsDocShell[%p]: DoChannelLoad load classify uri LINE: %d\n", this, __LINE__);
     loadFlags |= nsIChannel::LOAD_CLASSIFY_URI;
   }
+
+  printf("nsDocShell[%p]: DoChannelLoad set load flags %d LINE: %d\n", this, loadFlags, __LINE__);
 
   (void)aChannel->SetLoadFlags(loadFlags);
 
@@ -10986,7 +11075,11 @@ nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   if (!mAllowContentRetargeting) {
     openFlags |= nsIURILoader::DONT_RETARGET;
   }
+
+  printf("nsDocShell[%p]: DoChannelLoad open flags %d mLoadType: %d mAllowContentRetargeting: %d, LINE: %d\n", this, openFlags, mLoadType, mAllowContentRetargeting, __LINE__);
+
   rv = aURILoader->OpenURI(aChannel, openFlags, this);
+  printf("nsDocShell[%p]: DoChannelLoad open uri status: %d LINE: %d\n", this, rv, __LINE__);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;

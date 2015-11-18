@@ -323,6 +323,16 @@ WebBrowserChrome::OnLocationChange(nsIWebProgress* aWebProgress,
   navigation->GetCanGoForward(&canGoForward);
 
   bool isSameDocument = aFlags & nsIWebProgressListener::LOCATION_CHANGE_SAME_DOCUMENT;
+  // See TabChild::OnLocationChange
+//  if (mLastLocation != nullptr) {
+//    bool exposableEqualsLast;
+//    bool exposableEqualsNew;
+//    exposableURI->Equals(mLastURI.get(), &exposableEqualsLast);
+//    exposableURI->Equals(aLocation, &exposableEqualsNew);
+//    if (exposableEqualsLast && !exposableEqualsNew) {
+//      mContentDocumentIsDisplayed = false;
+//    }
+//  }
 
   mListener->OnLocationChanged(spec.get(), canGoBack, canGoForward, isSameDocument);
 

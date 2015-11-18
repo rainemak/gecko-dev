@@ -453,6 +453,13 @@ EmbedLiteViewBaseChild::RecvLoadURL(const nsString& url)
   if (sAllowKeyWordURL) {
     flags |= nsIWebNavigation::LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
   }
+
+  static bool firstLoad = true;
+  if (firstLoad) {
+    flags |= nsIWebNavigation::LOAD_FLAGS_FIRST_LOAD;
+    firstLoad = false;
+  }
+
   mWebNavigation->LoadURI(url.get(),
                           flags,
                           0, 0, 0);
