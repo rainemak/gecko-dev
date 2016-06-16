@@ -202,7 +202,7 @@ DataReportingService.prototype = Object.freeze({
    * The obtained instance may not be fully initialized.
    */
   get healthReporter() {
-    if (!this._prefs.get("service.enabled", true)) {
+    if (!this._prefs || !this._prefs.get("service.enabled", true)) {
       return null;
     }
 
