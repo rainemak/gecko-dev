@@ -804,6 +804,15 @@ add_task(function test_common_initialize()
   // saved to disk without asking for a destination interactively.
   let mock = {
     QueryInterface: XPCOMUtils.generateQI([Ci.nsIHelperAppLauncherDialog]),
+    promptForSaveToFile: function (aLauncher, aWindowContext,
+                                   aDefaultFileName,
+                                   aSuggestedFileExtension,
+                                   aForcePrompt)
+    {
+      throw new Components.Exception(
+                         "Synchronous promptForSaveToFile not implemented.",
+                         Cr.NS_ERROR_NOT_AVAILABLE);
+    },
     promptForSaveToFileAsync(aLauncher,
                              aWindowContext,
                              aDefaultFileName,
