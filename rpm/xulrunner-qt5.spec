@@ -77,7 +77,7 @@ BuildRequires:  pkgconfig(gstreamer-plugins-base-1.0)
 BuildRequires:  pkgconfig(Qt5Positioning)
 BuildRequires:  qt5-qttools
 BuildRequires:  qt5-default
-BuildRequires:  autoconf213
+BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  python
 BuildRequires:  python-devel
