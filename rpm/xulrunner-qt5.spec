@@ -154,6 +154,10 @@ Source0:    %{name}-%{version}.tar.bz2
 #Patch97:    0097-Bug-1761471-FFmpeg-5.0-Get-frame-color-range-and-col.patch
 #Patch98:    0098-Bug-1758948-FFmpeg-Use-AVFrame-pts-instead-of-AVFram.patch
 #Patch99:    0099-PATCH-sailfishos-Add-patch-to-fix-32-bit-builds.patch
+#Patch99:    0099-Bug-1710603-Allow-stat-on-from-socket-process-for-gl.patch
+#Patch100:   0100-Bug-1721326-Allow-dynamic-PTHREAD_STACK_MIN.-r-gland.patch
+#Patch101:   0101-Bug-1782988-Avoid-build-bustage-when-building-agains.patch
+#Patch102:   0102-Bug-1782988-Fix-use-of-arc4random_buf-use-in-ping.cp.patch
 
 #Patch20:    0020-sailfishos-loginmanager-Adapt-LoginManager-to-EmbedL.patch
 #Patch51:    0051-sailfishos-gecko-Remove-android-define-from-logging.patch
